@@ -1,11 +1,11 @@
-name: Workflow
+name: Monitor CloudFlare IP addresses
 on:
   workflow_dispatch:
   schedule:
     - cron:  '0 19 * * *'
 
 jobs:
-  generic:
+  monitor:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -19,15 +19,11 @@ jobs:
 
       - name: Check IPv4 list updated
         id: ipv4_list
-        run: |
-          diff previous/ips-v4 ips-v4 2>&1 > /dev/null
-          echo "::set-output name=updated::${?}"
+        run: echo "::set-output name=updated::$(diff previous/ips-v4 ips-v4; echo $?)"
 
       - name: Check IPv6 list updated
         id: ipv6_list
-        run: |
-          diff previous/ips-v6 ips-v6 2>&1 > /dev/null
-          echo "::set-output name=updated::${?}"
+        run: echo "::set-output name=updated::$(diff previous/ips-v6 ips-v6; echo $?)"
 
       - name: Generate branch prefix
         if: ${{ steps.ipv4_list.outputs.updated != 0 || steps.ipv6_list.outputs.updated != 0 }}
