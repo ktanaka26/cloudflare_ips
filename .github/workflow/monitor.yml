@@ -1,0 +1,51 @@
+name: Workflow
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 19 * * *'
+
+jobs:
+  generic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download CloudFlare IP address list
+        run: |
+          mkdir -p previous
+          cp ips-v4 ips-v6 previous/
+          curl -O ./ips-v4 https://www.cloudflare.com/ips-v4
+          curl -O ./ips-v6 https://www.cloudflare.com/ips-v6
+
+      - name: Check IPv4 list updated
+        id: ipv4_list
+        run: |
+          diff previous/ips-v4 ips-v4 2>&1 > /dev/null
+          echo "::set-output name=updated::${?}"
+
+      - name: Check IPv6 list updated
+        id: ipv6_list
+        run: |
+          diff previous/ips-v6 ips-v6 2>&1 > /dev/null
+          echo "::set-output name=updated::${?}"
+
+      - name: Generate branch prefix
+        if: ${{ steps.ipv4_list.outputs.updated != 0 || steps.ipv6_list.outputs.updated != 0 }}
+        id: datetime
+        run: |
+          echo "::set-output name=now::$(date '+%Y%m%d%H%M')"
+
+      - name: Create Pull Request
+        if: ${{ steps.ipv4_list.outputs.updated != 0 || steps.ipv6_list.outputs.updated != 0 }}
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'Update new IP address for CloudFlare'
+          title: Update new IP address for CloudFlare
+          body: |
+            @ktanaka26
+            - [ ] Review no syntax errors in IP address lists
+            - [ ] Update difference to firewall
+          branch: update-list-${{ steps.datetime.outputs.now }}
+          base: master
+          draft: true
