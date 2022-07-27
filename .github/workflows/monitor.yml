@@ -14,8 +14,8 @@ jobs:
         run: |
           mkdir -p previous
           cp ips-v4 ips-v6 previous/
-          curl -O ./ips-v4 https://www.cloudflare.com/ips-v4
-          curl -O ./ips-v6 https://www.cloudflare.com/ips-v6
+          curl -o ./ips-v4 https://www.cloudflare.com/ips-v4
+          curl -o ./ips-v6 https://www.cloudflare.com/ips-v6
 
       - name: Check IPv4 list updated
         id: ipv4_list
